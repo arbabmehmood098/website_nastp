@@ -1,0 +1,49 @@
+from flask import Flask
+from flask_cors import CORS
+from rout.signup import register_signup_routes
+from rout.login import register_login_routes
+from rout.create_wishlist import register_create_wishlist_routes
+from rout.add_wishlist_item import register_add_wishlist_item_routes
+from rout.delete_wishlist_item import register_delete_wishlist_routes
+from rout.get_wishlist import register_get_wishlist_routes
+from rout.create_profile import register_update_profile_routes
+from rout.get_profile import register_get_profile_routes
+from rout.check_out import register_check_out_routes
+from rout.sign_up_company import register_company_login_routes
+from rout.sign_up_company import register_company_signup_routes
+from rout.sign_up_company import register_update_company_info_routes
+from rout.add_product_rout import register_get_products_routes
+from rout.add_product_rout import register_get_product_routes
+from rout.add_product_rout import register_add_product_routes
+from rout.add_product_rout import register_update_product_routes
+from rout.add_product_rout import register_delete_product_routes
+from rout.user_order_rout import register_create_order_routes
+from rout.user_order_rout import register_delete_order_routes
+
+app = Flask(__name__)
+CORS(app)
+
+# Register routes
+register_signup_routes(app)
+register_login_routes(app)
+register_create_wishlist_routes(app)
+register_add_wishlist_item_routes(app)
+register_delete_wishlist_routes(app)
+register_get_product_routes(app)
+register_get_wishlist_routes(app)
+register_add_product_routes(app)
+register_update_product_routes(app)
+register_update_profile_routes(app)
+register_get_profile_routes(app)
+register_check_out_routes(app)
+register_company_signup_routes(app)
+register_company_login_routes(app)
+register_update_company_info_routes(app)
+register_delete_product_routes(app)
+register_get_products_routes(app)
+register_get_product_routes(app)
+register_create_order_routes(app)
+register_delete_order_routes(app)
+
+if __name__ == '__main__':
+    app.run(debug=True)
