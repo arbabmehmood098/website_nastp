@@ -1,6 +1,9 @@
 from firebase_config import auth, db, admin_auth
-
+from flask import jsonify, request
+from datetime import datetime
 import uuid
+import json
+
 def add_product():
     # Authentication
     auth_header = request.headers.get('Authorization')
@@ -12,7 +15,7 @@ def add_product():
         data = request.get_json()
 
         # Validate required fields
-        required_fields = ['product_name', 'price', 'category']
+        required_fields = ['name', 'price', 'category_id', 'description', 'collection']
         if not all(field in data for field in required_fields):
             return jsonify({"error": f"Missing required fields: {', '.join(required_fields)}"}), 400
 
@@ -20,23 +23,31 @@ def add_product():
         user = auth.get_account_info(token)
         company_auth_id = user['users'][0]['localId']
 
-        # Create product data
+        # Create product data with new attributes
         product_data = {
-            "product_id": str(uuid.uuid4()),
+            "id": str(uuid.uuid4()),
             "company_auth_id": company_auth_id,
-            "product_name": data['product_name'],
+            "name": data['name'],
             "price": float(data['price']),
-            "category": data['category'],
-            "description": data.get('description', ''),
-            "stock": int(data.get('stock', 0)),
+            "originalPrice": float(data.get('originalPrice', data['price'])),
+            "rating": float(data.get('rating', 0)),
+            "badge": data.get('badge', ""),
+            "discount": data.get('discount', ""),
+            "image": data.get('image', ""),
             "images": data.get('images', []),
+            "description": data['description'],
+            "category_id": data['category_id'],
+            "collection": data['collection'],
+            "reviewCount": int(data.get('reviewCount', 0)),
+            "review": data.get('review', {}),
+            "color": data.get('color', []),
             "created_at": datetime.utcnow().isoformat() + "Z",
             "updated_at": datetime.utcnow().isoformat() + "Z",
             "is_active": bool(data.get('is_active', True))
         }
 
-        # Add to database - Firebase automatically handles node creation
-        db.child("siberkoza").child("company").child("products").child(product_data['product_id']).set(product_data)
+        # Add to database
+        db.child("siberkoza").child("company").child("products").child(product_data['id']).set(product_data)
 
         return jsonify({
             "message": "Product added successfully",
@@ -91,9 +102,6 @@ def get_products():
         except:
             return jsonify({"error": "An unexpected error occurred while fetching products."}), 500
 
-
-import json
-
 def get_product():
     # Get token from Authorization header
     auth_header = request.headers.get('Authorization')
@@ -114,19 +122,15 @@ def get_product():
         user = auth.get_account_info(token)
         company_auth_id = user['users'][0]['localId']
 
-        # Get the company reference
-        company_ref = db.child("siberkoza").child("company")
-        company_data = company_ref.get().val()
-
-        # Check if company exists and matches the authenticated user
-        if not company_data or company_data.get('auth_id') != company_auth_id:
-            return jsonify({"error": "Unauthorized to view products for this company."}), 403
-
         # Get the specific product
         product = db.child("siberkoza").child("company").child("products").child(product_id).get().val()
 
         if not product:
             return jsonify({"error": "Product not found."}), 404
+
+        # Check if product belongs to the company
+        if product.get('company_auth_id') != company_auth_id:
+            return jsonify({"error": "Unauthorized to view this product."}), 403
 
         return jsonify({
             "message": "Product retrieved successfully",
@@ -143,10 +147,6 @@ def get_product():
             return jsonify({"error": error_message}), 400
         except:
             return jsonify({"error": "An unexpected error occurred while fetching the product."}), 500
-
-
-from flask import jsonify, request
-from datetime import datetime
 
 def update_product():
     # Authentication
@@ -178,27 +178,32 @@ def update_product():
         if not product_data:
             return jsonify({"error": "Product not found"}), 404
 
+        # Check if product belongs to the company
+        if product_data.get('company_auth_id') != company_auth_id:
+            return jsonify({"error": "Unauthorized to update this product"}), 403
+
         # Prepare updates
         updates = data['updates']
-        protected_fields = ['product_id', 'company_auth_id', 'created_at']
+        protected_fields = ['id', 'company_auth_id', 'created_at']
 
         for field in protected_fields:
             if field in updates:
                 del updates[field]
 
-        # Type conversions
-        if 'price' in updates:
-            updates['price'] = float(updates['price'])
-        if 'stock' in updates:
-            updates['stock'] = int(updates['stock'])
-        if 'is_active' in updates:
-            updates['is_active'] = bool(updates['is_active'])
+        # Type conversions for specific fields
+        numeric_fields = ['price', 'originalPrice', 'rating']
+        for field in numeric_fields:
+            if field in updates:
+                updates[field] = float(updates[field])
+
+        if 'reviewCount' in updates:
+            updates['reviewCount'] = int(updates['reviewCount'])
 
         # Add updated_at timestamp
         updates['updated_at'] = datetime.utcnow().isoformat() + "Z"
 
         # Update product
-        db.child("siberkoza").child("company").child("products").child(product_id).update(updates)
+        product_ref.update(updates)
 
         # Fetch updated product
         updated_product = product_ref.get().val()
@@ -230,9 +235,8 @@ def delete_product():
         user = auth.get_account_info(token)
         company_auth_id = user['users'][0]['localId']
 
-        # CORRECT Firebase database reference syntax
         product_ref = db.child("siberkoza").child("company").child("products").child(data['product_id'])
-        product_data = product_ref.get().val()  # Added .val() here
+        product_data = product_ref.get().val()
 
         # Check if product exists and belongs to this company
         if not product_data:
@@ -241,8 +245,8 @@ def delete_product():
         if product_data.get('company_auth_id') != company_auth_id:
             return jsonify({"error": "Unauthorized to delete this product"}), 403
 
-        # CORRECT Delete operation
-        product_ref.remove()  # Using remove() instead of delete()
+        # Delete product
+        product_ref.remove()
 
         return jsonify({
             "message": "Product deleted successfully",

@@ -19,6 +19,10 @@ from rout.add_product_rout import register_update_product_routes
 from rout.add_product_rout import register_delete_product_routes
 from rout.user_order_rout import register_create_order_routes
 from rout.user_order_rout import register_delete_order_routes
+from rout.user_order_rout import register_update_order_routes
+from rout.user_order_rout import register_get_user_orders_routes
+from rout.user_order_rout import register_get_specific_order_routes
+
 
 app = Flask(__name__)
 CORS(app)
@@ -44,6 +48,10 @@ register_get_products_routes(app)
 register_get_product_routes(app)
 register_create_order_routes(app)
 register_delete_order_routes(app)
+register_update_order_routes(app)
+register_get_user_orders_routes(app)
+register_get_specific_order_routes(app)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -8,6 +8,8 @@ def signup():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
 
     if not username or not email or not password:
         return jsonify({"error": "Username, email, and password are required."}), 400
@@ -20,7 +22,9 @@ def signup():
         # Store user data in Firebase Realtime Database under siberkoza/users/<user_id>
         user_data = {
             "username": username,
-            "email": email
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
         }
         db.child("siberkoza").child("users").child(user_id).set(user_data)
 
