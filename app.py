@@ -22,6 +22,7 @@ from rout.user_order_rout import register_delete_order_routes
 from rout.user_order_rout import register_update_order_routes
 from rout.user_order_rout import register_get_user_orders_routes
 from rout.user_order_rout import register_get_specific_order_routes
+from rout.user_review_route import register_product_review_routes
 
 
 app = Flask(__name__)
@@ -51,6 +52,7 @@ register_delete_order_routes(app)
 register_update_order_routes(app)
 register_get_user_orders_routes(app)
 register_get_specific_order_routes(app)
+register_product_review_routes(app)
 
 
 if __name__ == '__main__':
